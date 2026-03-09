@@ -1,4 +1,4 @@
-﻿# Start OpenClaw Launcher
+# Start OpenClaw Launcher
 
 一个面向 Windows 的中文图形启动器，用来把 `OpenClaw` 的启动、停止、代理联动和访问入口整合成一套更适合普通用户的桌面操作流程。
 
