@@ -1,4 +1,4 @@
-﻿# StartOpenClawLauncher
+# StartOpenClawLauncher
 
 A lightweight Windows launcher for OpenClaw with a Chinese UI.
 

@@ -1,4 +1,4 @@
-﻿# Start OpenClaw Launcher
+# Start OpenClaw Launcher
 
 A Windows desktop launcher with a Chinese UI that turns the `OpenClaw` start/stop workflow, proxy setup, and access entry into a simpler one-click experience for everyday users.
 
