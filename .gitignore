@@ -1,0 +1,16 @@
+.vs/
+*.user
+*.suo
+
+bin/
+obj/
+publish/
+
+StartOpenClawLauncher/bin/
+StartOpenClawLauncher/obj/
+StartOpenClawLauncher/tmp_*.ps1
+StartOpenClawLauncher/tmp_*.txt
+
+StartOpenClawLauncher/logs/
+StartOpenClawLauncher/launcher-state.json
+
