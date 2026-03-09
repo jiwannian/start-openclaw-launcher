@@ -1,116 +1,116 @@
-# Start OpenClaw Launcher
+﻿# Start OpenClaw Launcher
 
-一个面向 Windows 的中文图形启动器，用来把 `OpenClaw` 的启动、停止、代理联动和访问入口整合成一套更适合普通用户的桌面操作流程。
+A Windows desktop launcher with a Chinese UI that turns the `OpenClaw` start/stop workflow, proxy setup, and access entry into a simpler one-click experience for everyday users.
 
-它的目标不是替代 `OpenClaw` 本身，而是把“先确认代理、再启动 OpenClaw、再打开访问地址、最后统计运行时长”这套重复动作，压缩成更稳定的一键体验。
+This project does not aim to replace `OpenClaw` itself. Instead, it wraps the repetitive steps around it—checking the proxy, starting OpenClaw, opening the local access URL, and tracking runtime—into a more stable desktop flow.
 
-## 项目亮点
+## Highlights
 
-- 中文界面，面向桌面用户而不是命令行用户
-- 一键启动 `OpenClaw`
-- 一键关闭 `OpenClaw`
-- 自动检测本机是否安装并运行 `Clash`
-- 在检测到代理端口可用后，自动开启 Windows 系统代理
-- 确认 `OpenClaw` 网关可访问后，自动打开访问地址
-- 记录 `OpenClaw` 运行时长，并在关闭后展示本次运行时间
-- 若未检测到 `OpenClaw`，自动跳转官方安装页面
-- 绿色单文件发布，可直接分发 `exe`
+- Chinese desktop UI designed for non-terminal users
+- One-click start for `OpenClaw`
+- One-click stop for `OpenClaw`
+- Automatic detection of installed and running `Clash`
+- Automatic enablement of the Windows system proxy after the proxy port is ready
+- Automatic opening of the OpenClaw access URL after the gateway becomes available
+- Runtime tracking with elapsed time shown in the UI
+- Automatic redirect to the official OpenClaw install page when OpenClaw is not detected
+- Single-file green distribution for Windows via `exe`
 
-## 适用场景
+## Use Cases
 
-- 不想每次手动打开终端执行 `openclaw gateway run`
-- 希望让 `OpenClaw` 与 `Clash` 配合工作更省步骤
-- 想把 OpenClaw 交给非技术用户使用
-- 想快速分发一个可直接运行的 Windows 启停工具
+- You do not want to manually run `openclaw gateway run` in a terminal every time
+- You want `OpenClaw` and `Clash` to work together with fewer manual steps
+- You want to hand OpenClaw to non-technical users
+- You want a Windows launcher that can be distributed and used directly
 
-## 当前能力
+## Current Capabilities
 
-本项目当前版本已经实现以下完整流程：
+The current version implements the following workflow:
 
-1. 检测 `Clash` 是否安装、是否运行
-2. 若已安装但未运行，则尝试拉起 `Clash`
-3. 检查代理端口是否就绪，默认 `127.0.0.1:8090`
-4. 自动开启 Windows 系统代理
-5. 检测 `OpenClaw` 是否安装
-6. 若未安装，则提示并打开官方安装页
-7. 启动 `OpenClaw` 网关，默认地址为 `http://127.0.0.1:18789/`
-8. 在网关可访问后自动打开浏览器
-9. 关闭时优先尝试 `daemon stop`，再按端口和进程兜底清理
-10. 统计并展示本次运行时长
+1. Detect whether `Clash` is installed and running
+2. If installed but not running, attempt to launch `Clash`
+3. Check whether the proxy port is ready, default `127.0.0.1:8090`
+4. Automatically enable the Windows system proxy
+5. Detect whether `OpenClaw` is installed
+6. If OpenClaw is not installed, prompt the user and open the official install page
+7. Start the `OpenClaw` gateway, default URL `http://127.0.0.1:18789/`
+8. Open the browser automatically once the gateway is reachable
+9. On stop, try `daemon stop` first, then fall back to port- and process-based cleanup
+10. Track and display the runtime duration
 
-## 界面功能
+## UI Overview
 
-当前版本界面包含：
+The current UI includes:
 
-- `Clash 状态`
-- `代理状态`
-- `OpenClaw 状态`
-- `访问地址`
-- `运行时长`
-- `一键启动 OpenClaw`
-- `一键关闭 OpenClaw`
-- `运行日志`
+- `Clash Status`
+- `Proxy Status`
+- `OpenClaw Status`
+- `Access URL`
+- `Runtime Duration`
+- `Start OpenClaw`
+- `Stop OpenClaw`
+- `Runtime Logs`
 
-## 默认配置
+## Default Configuration
 
-程序首次运行时，会在 `exe` 同目录生成 `config.json`。
+On first launch, the application creates a `config.json` file in the same directory as the `exe`.
 
-默认配置包括：
+Default values include:
 
-- 代理主机：`127.0.0.1`
-- 代理端口：`8090`
-- OpenClaw 网关主机：`127.0.0.1`
-- OpenClaw 网关端口：`18789`
-- 启动超时：`25` 秒
-- 自动开启系统代理：开启
-- 启动成功后自动打开访问地址：开启
+- Proxy host: `127.0.0.1`
+- Proxy port: `8090`
+- OpenClaw gateway host: `127.0.0.1`
+- OpenClaw gateway port: `18789`
+- Startup timeout: `25` seconds
+- Auto-enable system proxy: enabled
+- Auto-open the access URL after startup: enabled
 
-可根据本机环境修改：
+The following entries can be adjusted for different environments:
 
 - `OpenClawCandidates`
 - `ClashCandidates`
 - `ClashProcessKeywords`
 
-## 快速开始
+## Quick Start
 
-### 方式一：直接下载可执行文件
+### Option 1: Download the executable
 
-请前往 Releases 页面下载发布版：
+Download the latest build from Releases:
 
 - <https://github.com/jiwannian/start-openclaw-launcher/releases>
 
-下载后直接运行 `StartOpenClawLauncher.exe` 即可。
+Then run `StartOpenClawLauncher.exe` directly.
 
-### 方式二：本地编译运行
+### Option 2: Build locally
 
-要求：
+Requirements:
 
 - Windows 10 / 11
 - .NET 8 SDK
 
-在项目根目录执行：
+Build the project:
 
 ```powershell
 dotnet build .\StartOpenClawLauncher\StartOpenClawLauncher.csproj
 ```
 
-运行：
+Run the project:
 
 ```powershell
 dotnet run --project .\StartOpenClawLauncher\StartOpenClawLauncher.csproj
 ```
 
-发布单文件 `exe`：
+Publish a single-file executable:
 
 ```powershell
 dotnet publish .\StartOpenClawLauncher\StartOpenClawLauncher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-发布产物默认位于：
+Published output is generated at:
 
 - `StartOpenClawLauncher\bin\Release\net8.0-windows\win-x64\publish\`
 
-## 项目结构
+## Project Structure
 
 ```text
 start openclaw/
@@ -123,40 +123,40 @@ start openclaw/
 └─ .gitignore
 ```
 
-## 技术栈
+## Tech Stack
 
 - `C#`
 - `WPF`
 - `.NET 8`
-- `Windows Registry`（系统代理控制）
-- `GitHub CLI`（用于仓库发布与 Release）
+- `Windows Registry` for system proxy control
+- `GitHub CLI` for repository and release publishing
 
-## 已验证功能
+## Verified Behavior
 
-项目已经完成过一轮真实联调验证，包括：
+This project has already been validated with a real local test flow, including:
 
-- 启动器窗口正常打开
-- 启动按钮与关闭按钮联动正常
-- 系统代理可自动开启到 `127.0.0.1:8090`
-- `OpenClaw` 网关可启动并返回 `HTTP 200`
-- 访问地址可自动打开
-- 运行时长可实时显示
-- 停止后状态文件可自动清理
+- Launcher window opens correctly
+- Start and stop actions work correctly
+- System proxy can be automatically enabled to `127.0.0.1:8090`
+- `OpenClaw` gateway can start and return `HTTP 200`
+- The access URL can be opened automatically
+- Runtime duration is updated live in the UI
+- State files are cleared automatically after stop
 
-## 已知边界
+## Known Boundaries
 
-- 当前默认适配 Windows 环境，不支持 macOS / Linux
-- “自动拉起 Clash”依赖本机 Clash 安装路径或进程关键字命中
-- 若本机使用的是非常规代理软件或自定义安装位置，可能需要手动修改 `config.json`
+- This project currently targets Windows only and does not support macOS or Linux
+- Automatic Clash startup depends on matching local install paths or process keywords
+- If your machine uses a custom proxy tool or a non-standard install path, you may need to edit `config.json`
 
-## 后续可扩展方向
+## Possible Next Steps
 
-- 关闭 `OpenClaw` 时自动恢复用户原有系统代理
-- 增加托盘运行与最小化到系统托盘
-- 增加启动参数编辑界面
-- 增加多套配置切换
-- 增加日志导出功能
+- Restore the user's previous system proxy settings after OpenClaw stops
+- Add system tray support and minimize-to-tray behavior
+- Add an editable startup-arguments UI
+- Support multiple runtime configurations
+- Add log export
 
-## 免责声明
+## Disclaimer
 
-本项目是一个第三方桌面启动器，不隶属于 `OpenClaw` 或 `Clash` 官方团队。请确保你在本地环境中合法、合规地使用相关软件与网络配置。
+This is a third-party desktop launcher and is not affiliated with the official `OpenClaw` or `Clash` teams. Make sure you use all related software and network settings legally and responsibly in your own environment.
