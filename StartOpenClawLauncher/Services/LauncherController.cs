@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
@@ -14,11 +14,13 @@ public sealed class LauncherController
 
     private readonly LauncherSettings _settings;
     private readonly LauncherStateStore _stateStore;
+    private readonly LocalizationService _localizer;
 
-    public LauncherController(LauncherSettings settings, LauncherStateStore stateStore)
+    public LauncherController(LauncherSettings settings, LauncherStateStore stateStore, LocalizationService localizer)
     {
         _settings = settings;
         _stateStore = stateStore;
+        _localizer = localizer;
     }
 
     public async Task<RuntimeSnapshot> GetSnapshotAsync()
@@ -46,7 +48,7 @@ public sealed class LauncherController
         };
     }
 
-    public async Task<ActionResult> StartAsync(Func<string, Task> log)
+        public async Task<ActionResult> StartAsync(Func<string, Task> log)
     {
         if (_settings.StartClashIfInstalled)
         {
@@ -55,13 +57,13 @@ public sealed class LauncherController
             {
                 if (IsClashRunning())
                 {
-                    await log("已检测到 Clash 正在运行。");
+                    await log(_localizer.T("ClashRunningDetectedLog"));
                 }
                 else
                 {
-                    await log($"检测到 Clash：{clashPath}");
+                    await log(_localizer.T("ClashDetectedLog", clashPath));
                     StartClash(clashPath);
-                    await log("已尝试启动 Clash。现在等待代理端口可用...");
+                    await log(_localizer.T("ClashStartAttemptLog"));
                 }
 
                 var proxyReady = await WaitForPortAsync(
@@ -71,33 +73,32 @@ public sealed class LauncherController
 
                 if (proxyReady)
                 {
-                    await log($"代理端口 {_settings.ProxyHost}:{_settings.ProxyPort} 已就绪。");
+                    await log(_localizer.T("ProxyReadyLog", _settings.ProxyHost, _settings.ProxyPort));
 
                     if (_settings.AutoEnableSystemProxy)
                     {
                         if (IsSystemProxyEnabled())
                         {
-                            await log($"系统代理已指向 {GetProxyServer()}，无需重复开启。");
+                            await log(_localizer.T("SystemProxyAlreadyLog", GetProxyServer()));
                         }
                         else if (EnableSystemProxy())
                         {
-                            await log($"已自动开启系统代理：{GetProxyServer()}");
+                            await log(_localizer.T("SystemProxyEnabledLog", GetProxyServer()));
                         }
                         else
                         {
-                            await log("已检测到代理端口，但自动开启系统代理失败，请手动检查系统代理设置。");
+                            await log(_localizer.T("SystemProxyEnableFailedLog"));
                         }
                     }
                 }
                 else
                 {
-                    await log($"警告：Clash 已检测到，但代理端口 {_settings.ProxyHost}:{_settings.ProxyPort} 暂未就绪。已跳过自动开启系统代理。");
+                    await log(_localizer.T("ProxyNotReadyLog", _settings.ProxyHost, _settings.ProxyPort));
                 }
             }
             else
             {
-                await log("未检测到 Clash，将按无代理模式继续。"
-                );
+                await log(_localizer.T("ClashNotDetectedLog"));
             }
         }
 
@@ -108,7 +109,7 @@ public sealed class LauncherController
             {
                 Success = false,
                 ShouldOpenOfficialPage = true,
-                Summary = "未检测到 OpenClaw，已准备打开官方安装页面。"
+                Summary = _localizer.T("OpenClawMissingSummary")
             };
         }
 
@@ -122,11 +123,11 @@ public sealed class LauncherController
                 {
                     Success = true,
                     AccessUrl = _settings.AutoOpenAccessPageOnStart ? BuildOpenClawAccessUrl() : null,
-                    Summary = $"OpenClaw 已在运行中（PID: {existingPid.Value}），将自动打开访问地址。"
+                    Summary = _localizer.T("OpenClawRunningReadySummary", existingPid.Value)
                 };
             }
 
-            await log($"检测到疑似 OpenClaw 进程（PID: {existingPid.Value}），但访问端口未就绪，将尝试重新启动。");
+            await log(_localizer.T("SuspectedProcessLog", existingPid.Value));
         }
 
         var startedAt = DateTimeOffset.Now;
@@ -138,7 +139,7 @@ public sealed class LauncherController
             return new ActionResult
             {
                 Success = false,
-                Summary = "OpenClaw 启动失败，未能创建进程。"
+                Summary = _localizer.T("OpenClawCreateFailedSummary")
             };
         }
 
@@ -165,11 +166,10 @@ public sealed class LauncherController
             Success = ready,
             AccessUrl = ready && _settings.AutoOpenAccessPageOnStart ? BuildOpenClawAccessUrl() : null,
             Summary = ready
-                ? $"OpenClaw 已启动，访问地址：{BuildOpenClawAccessUrl()}"
-                : $"已启动 OpenClaw 进程（PID: {actualPid ?? process.Id}），但在限定时间内未检测到访问端口。"
+                ? _localizer.T("OpenClawStartedSummary", BuildOpenClawAccessUrl())
+                : _localizer.T("OpenClawStartedNotReadySummary", actualPid ?? process.Id)
         };
     }
-
     public async Task<ActionResult> StopAsync(Func<string, Task> log)
     {
         var state = _stateStore.Load();
@@ -184,13 +184,13 @@ public sealed class LauncherController
             var daemonResult = await CommandRunner.RunAsync(daemonFile, daemonArgs, timeoutMs: 12000);
             if (daemonResult.ExitCode == 0)
             {
-                await log("已尝试通过 OpenClaw daemon stop 关闭服务。");
+                await log(_localizer.T("DaemonStopLog"));
             }
         }
 
         if (state.OpenClawPid.HasValue)
         {
-            await log($"正在结束由启动器记录的 OpenClaw 进程（PID: {state.OpenClawPid.Value}）。");
+            await log(_localizer.T("KillRecordedPidLog", state.OpenClawPid.Value));
             CommandRunner.TryKillProcessTree(state.OpenClawPid.Value);
         }
 
@@ -198,14 +198,14 @@ public sealed class LauncherController
         {
             if (await IsOpenClawProcessAsync(pid))
             {
-                await log($"正在结束监听端口 {_settings.GatewayPort} 的 OpenClaw 进程（PID: {pid}）。");
+                await log(_localizer.T("KillPortPidLog", _settings.GatewayPort, pid));
                 CommandRunner.TryKillProcessTree(pid);
             }
         }
 
         foreach (var pid in await FindOpenClawGatewayProcessIdsAsync())
         {
-            await log($"正在结束匹配到的 OpenClaw 网关进程（PID: {pid}）。");
+            await log(_localizer.T("KillGatewayPidLog", pid));
             CommandRunner.TryKillProcessTree(pid);
         }
 
@@ -221,8 +221,8 @@ public sealed class LauncherController
                 Success = true,
                 RunDuration = runDuration,
                 Summary = runDuration.HasValue
-                    ? $"OpenClaw 已关闭。本次运行时长：{FormatDuration(runDuration.Value)}。"
-                    : "OpenClaw 已关闭。"
+                    ? _localizer.T("OpenClawStoppedDurationSummary", FormatDuration(runDuration.Value))
+                    : _localizer.T("OpenClawStoppedSummary")
             };
         }
 
@@ -230,10 +230,9 @@ public sealed class LauncherController
         {
             Success = false,
             RunDuration = runDuration,
-            Summary = "未能确认 OpenClaw 已完全关闭，请查看日志继续排查。"
+            Summary = _localizer.T("OpenClawStopNotConfirmedSummary")
         };
     }
-
     public void OpenOfficialOpenClawPage()
     {
         OpenUrl(_settings.OpenClawOfficialUrl);
@@ -646,3 +645,4 @@ public sealed class LauncherController
     [DllImport("wininet.dll", SetLastError = true)]
     private static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int dwBufferLength);
 }
+

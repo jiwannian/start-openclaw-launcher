@@ -1,100 +1,87 @@
-# Start OpenClaw Launcher
+﻿# OpenClaw Desktop Launcher
 
-A Windows desktop launcher with a Chinese UI that turns the `OpenClaw` start/stop workflow, proxy setup, and access entry into a simpler one-click experience for everyday users.
+![Release](https://img.shields.io/github/v/release/jiwannian/openclaw-desktop-launcher?display_name=tag&sort=semver)
+![Downloads](https://img.shields.io/github/downloads/jiwannian/openclaw-desktop-launcher/total)
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
+![.NET 8](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet&logoColor=white)
+![WPF](https://img.shields.io/badge/UI-WPF-0C54C2)
 
-This project does not aim to replace `OpenClaw` itself. Instead, it wraps the repetitive steps around it—checking the proxy, starting OpenClaw, opening the local access URL, and tracking runtime—into a more stable desktop flow.
+A multilingual Windows desktop launcher for OpenClaw that simplifies Clash startup, system proxy automation, local access opening, and runtime tracking into a clean one-click workflow.
 
-## Highlights
+[![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-2ea44f?style=for-the-badge)](https://github.com/jiwannian/openclaw-desktop-launcher/releases/latest)
 
-- Chinese desktop UI designed for non-terminal users
-- One-click start for `OpenClaw`
-- One-click stop for `OpenClaw`
-- Automatic detection of installed and running `Clash`
-- Automatic enablement of the Windows system proxy after the proxy port is ready
-- Automatic opening of the OpenClaw access URL after the gateway becomes available
-- Runtime tracking with elapsed time shown in the UI
-- Automatic redirect to the official OpenClaw install page when OpenClaw is not detected
-- Single-file green distribution for Windows via `exe`
+## Screenshot
 
-## Use Cases
+![OpenClaw Desktop Launcher screenshot](README-assets/openclaw-desktop-launcher-en.png)
 
-- You do not want to manually run `openclaw gateway run` in a terminal every time
-- You want `OpenClaw` and `Clash` to work together with fewer manual steps
-- You want to hand OpenClaw to non-technical users
-- You want a Windows launcher that can be distributed and used directly
+## Why this project
 
-## Current Capabilities
+OpenClaw often works best when the surrounding desktop steps are also handled well: detecting Clash, making sure the proxy is available, enabling the Windows system proxy when needed, launching the gateway, opening the local access URL, and shutting everything down cleanly.
 
-The current version implements the following workflow:
+This launcher packages that workflow into a Windows desktop app so non-terminal users can use OpenClaw more comfortably.
 
-1. Detect whether `Clash` is installed and running
-2. If installed but not running, attempt to launch `Clash`
-3. Check whether the proxy port is ready, default `127.0.0.1:8090`
-4. Automatically enable the Windows system proxy
-5. Detect whether `OpenClaw` is installed
-6. If OpenClaw is not installed, prompt the user and open the official install page
-7. Start the `OpenClaw` gateway, default URL `http://127.0.0.1:18789/`
-8. Open the browser automatically once the gateway is reachable
-9. On stop, try `daemon stop` first, then fall back to port- and process-based cleanup
-10. Track and display the runtime duration
+## Features
 
-## UI Overview
+- One-click start for OpenClaw
+- One-click stop for OpenClaw
+- Automatic Clash detection and optional startup
+- Automatic Windows system proxy enablement after the proxy endpoint is ready
+- Automatic opening of the local OpenClaw access URL after startup
+- Runtime timer and status tracking
+- Official OpenClaw installation page fallback when OpenClaw is not detected
+- Portable Windows distribution through a single executable
+- Built-in language switch in the top-left corner
 
-The current UI includes:
+## Supported Languages
 
-- `Clash Status`
-- `Proxy Status`
-- `OpenClaw Status`
-- `Access URL`
-- `Runtime Duration`
-- `Start OpenClaw`
-- `Stop OpenClaw`
-- `Runtime Logs`
+The launcher currently includes these UI languages:
 
-## Default Configuration
+- English (default)
+- Chinese
+- Hindi
+- Spanish
+- Arabic
+- Russian
+- Portuguese
+- French
+- Italian
+- Japanese
 
-On first launch, the application creates a `config.json` file in the same directory as the `exe`.
+## Workflow
 
-Default values include:
-
-- Proxy host: `127.0.0.1`
-- Proxy port: `8090`
-- OpenClaw gateway host: `127.0.0.1`
-- OpenClaw gateway port: `18789`
-- Startup timeout: `25` seconds
-- Auto-enable system proxy: enabled
-- Auto-open the access URL after startup: enabled
-
-The following entries can be adjusted for different environments:
-
-- `OpenClawCandidates`
-- `ClashCandidates`
-- `ClashProcessKeywords`
+1. Detect whether Clash is installed and already running
+2. Start Clash automatically if it is installed but not running
+3. Wait for the proxy endpoint, default `127.0.0.1:8090`
+4. Enable the Windows system proxy when configured
+5. Detect whether OpenClaw is installed
+6. Open the official install page if OpenClaw is missing
+7. Start the OpenClaw gateway, default `http://127.0.0.1:18789/`
+8. Open the local access URL automatically when the gateway is ready
+9. Track runtime duration until shutdown
+10. Stop OpenClaw through daemon stop and process cleanup fallback
 
 ## Quick Start
 
-### Option 1: Download the executable
+### Download
 
-Download the latest build from Releases:
+- Open the latest release page: `https://github.com/jiwannian/openclaw-desktop-launcher/releases/latest`
+- Download `OpenClawDesktopLauncher-v1.1.0-win-x64.exe`
+- Run the executable directly on Windows
 
-- <https://github.com/jiwannian/start-openclaw-launcher/releases>
-
-Then run `StartOpenClawLauncher.exe` directly.
-
-### Option 2: Build locally
+### Build locally
 
 Requirements:
 
-- Windows 10 / 11
+- Windows 10 or Windows 11
 - .NET 8 SDK
 
-Build the project:
+Build:
 
 ```powershell
 dotnet build .\StartOpenClawLauncher\StartOpenClawLauncher.csproj
 ```
 
-Run the project:
+Run:
 
 ```powershell
 dotnet run --project .\StartOpenClawLauncher\StartOpenClawLauncher.csproj
@@ -106,57 +93,39 @@ Publish a single-file executable:
 dotnet publish .\StartOpenClawLauncher\StartOpenClawLauncher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-Published output is generated at:
+## Default Configuration
 
-- `StartOpenClawLauncher\bin\Release\net8.0-windows\win-x64\publish\`
+The app creates `config.json` next to the executable. Default values include:
 
-## Project Structure
+- Proxy host: `127.0.0.1`
+- Proxy port: `8090`
+- Gateway host: `127.0.0.1`
+- Gateway port: `18789`
+- Startup timeout: `25` seconds
+- Default language: `en`
+- Auto-enable system proxy: enabled
+- Auto-open local access URL after startup: enabled
 
-```text
-start openclaw/
-├─ StartOpenClawLauncher/
-│  ├─ Models/
-│  ├─ Services/
-│  ├─ MainWindow.xaml
-│  ├─ MainWindow.xaml.cs
-│  └─ StartOpenClawLauncher.csproj
-└─ .gitignore
-```
+You can customize detection lists through:
+
+- `OpenClawCandidates`
+- `ClashCandidates`
+- `ClashProcessKeywords`
 
 ## Tech Stack
 
-- `C#`
-- `WPF`
-- `.NET 8`
-- `Windows Registry` for system proxy control
-- `GitHub CLI` for repository and release publishing
+- C#
+- WPF
+- .NET 8
+- Windows Registry integration for system proxy control
 
-## Verified Behavior
+## Notes
 
-This project has already been validated with a real local test flow, including:
-
-- Launcher window opens correctly
-- Start and stop actions work correctly
-- System proxy can be automatically enabled to `127.0.0.1:8090`
-- `OpenClaw` gateway can start and return `HTTP 200`
-- The access URL can be opened automatically
-- Runtime duration is updated live in the UI
-- State files are cleared automatically after stop
-
-## Known Boundaries
-
-- This project currently targets Windows only and does not support macOS or Linux
-- Automatic Clash startup depends on matching local install paths or process keywords
-- If your machine uses a custom proxy tool or a non-standard install path, you may need to edit `config.json`
-
-## Possible Next Steps
-
-- Restore the user's previous system proxy settings after OpenClaw stops
-- Add system tray support and minimize-to-tray behavior
-- Add an editable startup-arguments UI
-- Support multiple runtime configurations
-- Add log export
+- Windows only
+- Clash auto-detection depends on local install paths, process names, or uninstall registry entries
+- Custom OpenClaw or proxy setups may require editing `config.json`
 
 ## Disclaimer
 
-This is a third-party desktop launcher and is not affiliated with the official `OpenClaw` or `Clash` teams. Make sure you use all related software and network settings legally and responsibly in your own environment.
+This is an independent desktop launcher and is not affiliated with the official OpenClaw or Clash teams. Use it responsibly and in compliance with local laws, policies, and software terms.
+

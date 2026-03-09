@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>StartOpenClawLauncher</RootNamespace>
-    <AssemblyName>StartOpenClawLauncher</AssemblyName>
+    <AssemblyName>OpenClawDesktopLauncher</AssemblyName>
   </PropertyGroup>
 </Project>
+

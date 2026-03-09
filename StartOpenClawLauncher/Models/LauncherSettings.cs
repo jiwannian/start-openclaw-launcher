@@ -4,6 +4,7 @@ public sealed class LauncherSettings
 {
     public int ProxyPort { get; set; } = 8090;
     public string ProxyHost { get; set; } = "127.0.0.1";
+    public string LanguageCode { get; set; } = "en";
     public string GatewayHost { get; set; } = "127.0.0.1";
     public int GatewayPort { get; set; } = 18789;
     public int StartupTimeoutSeconds { get; set; } = 25;

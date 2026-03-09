@@ -1,5 +1,6 @@
-using System.Text;
+﻿using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using StartOpenClawLauncher.Models;
@@ -14,10 +15,12 @@ public partial class MainWindow : Window
     private readonly FileLogService _fileLogService;
     private readonly LauncherController _controller;
     private readonly LauncherSettings _settings;
+    private readonly LocalizationService _localizer;
     private readonly DispatcherTimer _runtimeTimer;
 
     private bool _isBusy;
     private bool _isOpenClawRunning;
+    private bool _isLanguageSelectionUpdating;
     private DateTimeOffset? _currentOpenClawStartedAt;
     private TimeSpan? _lastRunDuration;
 
@@ -28,22 +31,49 @@ public partial class MainWindow : Window
         _stateStore = new LauncherStateStore();
         _fileLogService = new FileLogService();
         _settings = _configService.LoadOrCreate();
-        _controller = new LauncherController(_settings, _stateStore);
+        _localizer = new LocalizationService();
+        _localizer.SetLanguage(_settings.LanguageCode);
+        _controller = new LauncherController(_settings, _stateStore, _localizer);
         _runtimeTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(1)
         };
 
         _runtimeTimer.Tick += RuntimeTimer_Tick;
+        PopulateLanguageOptions();
+        ApplyLocalization();
         Loaded += MainWindow_Loaded;
         Closed += MainWindow_Closed;
+    }
+
+    private void PopulateLanguageOptions()
+    {
+        _isLanguageSelectionUpdating = true;
+        LanguageComboBox.ItemsSource = _localizer.Languages;
+        LanguageComboBox.SelectedItem = _localizer.Languages.FirstOrDefault(language => language.Code.Equals(_settings.LanguageCode, StringComparison.OrdinalIgnoreCase))
+            ?? _localizer.Languages.First(language => language.Code == "en");
+        _isLanguageSelectionUpdating = false;
+    }
+
+    private async void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLanguageSelectionUpdating || LanguageComboBox.SelectedItem is not LanguageOption option)
+        {
+            return;
+        }
+
+        _settings.LanguageCode = option.Code;
+        _configService.Save(_settings);
+        _localizer.SetLanguage(option.Code);
+        ApplyLocalization();
+        await RefreshSnapshotAsync();
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await RefreshSnapshotAsync();
         _runtimeTimer.Start();
-        AppendLog("启动器已就绪。配置文件位于 exe 同目录下的 config.json。", false);
+        AppendLog(_localizer.T("ReadyLog"), false);
     }
 
     private void MainWindow_Closed(object? sender, EventArgs e)
@@ -62,20 +92,20 @@ public partial class MainWindow : Window
 
         await RunBusyAsync(async () =>
         {
-            AppendLog("开始执行一键启动流程...", false);
+            AppendLog(_localizer.T("StartFlowLog"), false);
             var result = await _controller.StartAsync(LogAsync);
             AppendLog(result.Summary, !result.Success);
 
             if (result.ShouldOpenOfficialPage)
             {
-                MessageBox.Show(this, "未检测到 OpenClaw，接下来会打开官方安装页面。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, _localizer.T("NotInstalledMessage"), _localizer.T("InfoTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
                 _controller.OpenOfficialOpenClawPage();
                 return;
             }
 
             if (result.Success && !string.IsNullOrWhiteSpace(result.AccessUrl))
             {
-                AppendLog($"正在打开 OpenClaw 访问地址：{result.AccessUrl}", false);
+                AppendLog(_localizer.T("OpeningUrlLog", result.AccessUrl), false);
                 _controller.OpenUrl(result.AccessUrl);
             }
         });
@@ -87,7 +117,7 @@ public partial class MainWindow : Window
 
         await RunBusyAsync(async () =>
         {
-            AppendLog("开始执行一键关闭流程...", false);
+            AppendLog(_localizer.T("StopFlowLog"), false);
             var result = await _controller.StopAsync(LogAsync);
             _lastRunDuration = result.RunDuration;
             AppendLog(result.Summary, !result.Success);
@@ -103,8 +133,8 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AppendLog($"发生未处理异常：{ex.Message}", true);
-            MessageBox.Show(this, ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppendLog(_localizer.T("UnhandledException", ex.Message), true);
+            MessageBox.Show(this, ex.Message, _localizer.T("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -118,9 +148,26 @@ public partial class MainWindow : Window
         _isBusy = isBusy;
         StartButton.IsEnabled = !isBusy;
         StopButton.IsEnabled = !isBusy;
-        HintTextBlock.Text = isBusy
-            ? "正在执行，请稍候..."
-            : "启动按钮会自动拉起 Clash、自动开启系统代理，并在确认 OpenClaw 运行后自动打开访问地址。";
+        HintTextBlock.Text = _localizer.T(isBusy ? "HintBusy" : "HintIdle");
+    }
+
+    private void ApplyLocalization()
+    {
+        Title = _localizer.T("WindowTitle");
+        LanguageLabelTextBlock.Text = _localizer.T("LanguageLabel");
+        HeaderTitleTextBlock.Text = _localizer.T("HeaderTitle");
+        HeaderSubtitleTextBlock.Text = _localizer.T("HeaderSubtitle");
+        ClashCardTitleTextBlock.Text = _localizer.T("CardClash");
+        ProxyCardTitleTextBlock.Text = _localizer.T("CardProxy");
+        OpenClawCardTitleTextBlock.Text = _localizer.T("CardOpenClaw");
+        StartButton.Content = _localizer.T("ButtonStart");
+        StopButton.Content = _localizer.T("ButtonStop");
+        HintTextBlock.Text = _localizer.T(_isBusy ? "HintBusy" : "HintIdle");
+        AccessCardTitleTextBlock.Text = _localizer.T("CardAccess");
+        AccessDescriptionTextBlock.Text = _localizer.T("AccessDescription");
+        RuntimeCardTitleTextBlock.Text = _localizer.T("CardRuntime");
+        LogsTitleTextBlock.Text = _localizer.T("LogsTitle");
+        UpdateRuntimeDisplay();
     }
 
     private async Task RefreshSnapshotAsync()
@@ -130,16 +177,22 @@ public partial class MainWindow : Window
         SetStatus(
             ClashStatusTextBlock,
             ClashDetailTextBlock,
-            snapshot.ClashInstalled ? (snapshot.ClashRunning ? "已安装 / 运行中" : "已安装 / 未运行") : "未检测到",
-            snapshot.ClashInstalled ? snapshot.ClashPath ?? "已检测到，但路径未知" : "未在常见路径、进程或注册表中检测到 Clash。",
+            snapshot.ClashInstalled ? (snapshot.ClashRunning ? _localizer.T("InstalledRunning") : _localizer.T("InstalledNotRunning")) : _localizer.T("NotDetected"),
+            snapshot.ClashInstalled ? snapshot.ClashPath ?? _localizer.T("DetectedPathUnknown") : _localizer.T("ClashMissingDetail"),
             !snapshot.ClashInstalled);
 
         var proxyStatus = snapshot.ProxyReady
             ? snapshot.SystemProxyEnabled
-                ? "代理可用 / 已开启系统代理"
-                : "代理可用 / 系统代理未开启"
-            : "代理未就绪";
-        var proxyDetail = $"端口：{_settings.ProxyHost}:{_settings.ProxyPort} | 系统代理：{(snapshot.SystemProxyEnabled ? "已开启" : "未开启")}";
+                ? _localizer.T("ProxyReadySystemEnabled")
+                : _localizer.T("ProxyReadySystemDisabled")
+            : _localizer.T("ProxyNotReady");
+
+        var proxyDetail = _localizer.T(
+            "ProxyDetail",
+            _settings.ProxyHost,
+            _settings.ProxyPort,
+            _localizer.T(snapshot.SystemProxyEnabled ? "SystemProxyEnabled" : "SystemProxyDisabled"));
+
         SetStatus(
             ProxyStatusTextBlock,
             ProxyDetailTextBlock,
@@ -147,13 +200,14 @@ public partial class MainWindow : Window
             proxyDetail,
             !snapshot.ProxyReady || !snapshot.SystemProxyEnabled);
 
+        var openClawPathSuffix = snapshot.OpenClawPid.HasValue ? $" | PID: {snapshot.OpenClawPid.Value}" : string.Empty;
         SetStatus(
             OpenClawStatusTextBlock,
             OpenClawDetailTextBlock,
-            snapshot.OpenClawInstalled ? (snapshot.OpenClawRunning ? "已安装 / 运行中" : "已安装 / 未运行") : "未检测到",
+            snapshot.OpenClawInstalled ? (snapshot.OpenClawRunning ? _localizer.T("InstalledRunning") : _localizer.T("InstalledNotRunning")) : _localizer.T("NotDetected"),
             snapshot.OpenClawInstalled
-                ? $"路径：{snapshot.OpenClawPath}{(snapshot.OpenClawPid.HasValue ? $" | PID: {snapshot.OpenClawPid.Value}" : string.Empty)}"
-                : "未在 PATH 或常见 npm 全局目录中检测到 openclaw.cmd。",
+                ? _localizer.T("OpenClawPathDetail", snapshot.OpenClawPath ?? _localizer.T("DetectedPathUnknown"), openClawPathSuffix)
+                : _localizer.T("OpenClawMissingDetail"),
             !snapshot.OpenClawInstalled);
 
         AccessUrlTextBlock.Text = snapshot.OpenClawAccessUrl;
@@ -181,12 +235,12 @@ public partial class MainWindow : Window
             {
                 var duration = DateTimeOffset.Now - _currentOpenClawStartedAt.Value;
                 RuntimeValueTextBlock.Text = FormatDuration(duration);
-                RuntimeDetailTextBlock.Text = $"启动时间：{_currentOpenClawStartedAt.Value:yyyy-MM-dd HH:mm:ss}";
+                RuntimeDetailTextBlock.Text = _localizer.T("RuntimeStartedAt", _currentOpenClawStartedAt.Value.ToString("yyyy-MM-dd HH:mm:ss"));
                 return;
             }
 
-            RuntimeValueTextBlock.Text = "正在运行（启动时间未知）";
-            RuntimeDetailTextBlock.Text = "该进程可能不是由本启动器拉起，因此无法准确统计总时长。";
+            RuntimeValueTextBlock.Text = _localizer.T("RuntimeUnknown");
+            RuntimeDetailTextBlock.Text = _localizer.T("RuntimeUnknownDetail");
             return;
         }
 
@@ -194,13 +248,13 @@ public partial class MainWindow : Window
 
         if (_lastRunDuration.HasValue)
         {
-            RuntimeValueTextBlock.Text = $"上次运行：{FormatDuration(_lastRunDuration.Value)}";
-            RuntimeDetailTextBlock.Text = "OpenClaw 当前未运行。";
+            RuntimeValueTextBlock.Text = _localizer.T("RuntimeLastRun", FormatDuration(_lastRunDuration.Value));
+            RuntimeDetailTextBlock.Text = _localizer.T("RuntimeStoppedDetail");
             return;
         }
 
-        RuntimeValueTextBlock.Text = "未运行";
-        RuntimeDetailTextBlock.Text = "启动后将自动开始计时。";
+        RuntimeValueTextBlock.Text = _localizer.T("RuntimeNotRunning");
+        RuntimeDetailTextBlock.Text = _localizer.T("RuntimeIdleDescription");
     }
 
     private static string FormatDuration(TimeSpan duration)
@@ -208,7 +262,7 @@ public partial class MainWindow : Window
         return $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
-    private static void SetStatus(System.Windows.Controls.TextBlock titleBlock, System.Windows.Controls.TextBlock detailBlock, string title, string detail, bool isWarning)
+    private static void SetStatus(TextBlock titleBlock, TextBlock detailBlock, string title, string detail, bool isWarning)
     {
         titleBlock.Text = title;
         titleBlock.Foreground = isWarning
@@ -231,7 +285,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var line = $"[{DateTime.Now:HH:mm:ss}] {(isError ? "[错误] " : string.Empty)}{message}";
+        var line = $"[{DateTime.Now:HH:mm:ss}] {(isError ? _localizer.T("ErrorPrefix") : string.Empty)}{message}";
         _fileLogService.WriteLine(line);
 
         var builder = new StringBuilder(LogTextBox.Text);
